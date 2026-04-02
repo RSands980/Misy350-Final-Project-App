@@ -1,1 +1,9 @@
-[]
+[
+    {
+        "user_id": "1",
+        "name": "test",
+        "email": "tes@test.com",
+        "password": "123",
+        "role": "Patient"
+    }
+]

@@ -32,6 +32,12 @@ with st.sidebar:
     if st.button("Register"):
         st.session_state["page"] = "register"
         st.rerun()
+    
+    if st.session_state["user"] is not None:
+        if st.button("Logout"):
+            st.session_state["user"] = None
+            st.session_state["page"] = "login"
+            st.rerun()
 
 # LOGIN PAGE
 if st.session_state["page"] == "login":
@@ -52,7 +58,9 @@ if st.session_state["page"] == "login":
 
         if found_user is not None:
             st.session_state["user"] = found_user
+            st.session_state["page"] = "dashboard"
             st.success("Logged in successfully")
+            st.rerun()
         else:
             st.error("Invalid email or password")
 
@@ -95,6 +103,8 @@ elif st.session_state["page"] == "register":
                         json.dump(users, f, indent=4)
 
                 st.success("Account created successfully")
+                st.session_state["page"] = "login"
+                st.rerun()
 
 # SIMPLE DASHBOARD (STARTED, NOT FINISHED)
 if st.session_state["user"] is not None:
@@ -102,12 +112,13 @@ if st.session_state["user"] is not None:
 
     user = st.session_state["user"]
 
-    st.subheader("Dashboard")
-    st.write("Welcome:", user["name"])
-    st.write("Role:", user["role"])
+    with st.container(border=True):
+        st.subheader("Dashboard")
+        st.write("Welcome:", user["name"])
+        st.write("Role:", user["role"])
 
-    if user["role"] == "Patient":
-        st.write("Patient features coming next")
+        if user["role"] == "Patient":
+            st.write("Patient features coming next")
 
-    elif user["role"] == "Doctor":
-        st.write("Doctor features coming next")
+        elif user["role"] == "Doctor":
+            st.write("Doctor features coming next")
