@@ -129,3 +129,5 @@ if st.session_state["user"] is not None:
 
         elif user["role"] == "Doctor":
             st.subheader("Create Appointment Slot")
+            appointment_date = st.date_input("Appointment Date")
+            appointment_time = st.time_input("Appointment Time")
