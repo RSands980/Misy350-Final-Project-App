@@ -19,9 +19,9 @@ else:
 # Load appointments
 if appointments_path.exists():
     with open(appointments_path, "r") as f:
-        appointmnts = json.load(f)
+        appointments = json.load(f)
 else:
-    appointmnts = []
+    appointments = []
 
 # session state
 if "page" not in st.session_state:
@@ -131,3 +131,20 @@ if st.session_state["user"] is not None:
             st.subheader("Create Appointment Slot")
             appointment_date = st.date_input("Appointment Date")
             appointment_time = st.time_input("Appointment Time")
+            if st.button("Add Appointment Slot"):
+                new_appointment = {
+                    "appointment_id": str(len(appointments) + 1),
+                    "doctor_email": user["email"],
+                    "patient_email": "",
+                    "date": str(appointment_date),
+                    "time": str(appointment_time),
+                    "status": "available"
+                 }
+                
+                appointments.append(new_appointment)
+
+                with open(appointments_path, "w") as f:
+                    json.dump(appointments, f, indent=4)
+
+                st.success("Appointment slot added successfully")
+                st.rerun()
