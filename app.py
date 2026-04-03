@@ -148,3 +148,13 @@ if st.session_state["user"] is not None:
 
                 st.success("Appointment slot added successfully")
                 st.rerun()
+
+            st.subheader("Your Appointment Slots")
+            for appointment in appointments:
+                if appointment["doctor_email"] == user["email"]:
+                    st.write(
+                        "Date", appointment["date"],
+                        "Time", appointment["time"],
+                        "Status", appointment["status"]
+                    )
+                    
