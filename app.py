@@ -127,6 +127,14 @@ if st.session_state["user"] is not None:
         if user["role"] == "Patient":
             st.subheader("Available Appointments")
 
+            for appointment in appointments:
+                if appointment["status"] == "available":
+                    st.write(
+                        "Doctor:", appointment["doctor_email"],
+                        "Date:", appointment["date"],
+                        "Time:", appointment["time"]
+                    )
+
         elif user["role"] == "Doctor":
             st.subheader("Create Appointment Slot")
             appointment_date = st.date_input("Appointment Date")
