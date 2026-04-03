@@ -128,4 +128,4 @@ if st.session_state["user"] is not None:
             st.write("Patient features coming next")
 
         elif user["role"] == "Doctor":
-            st.write("Doctor features coming next")
+            st.subheader("Create Appointment Slot")

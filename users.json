@@ -5,5 +5,12 @@
         "email": "tes@test.com",
         "password": "123",
         "role": "Patient"
+    },
+    {
+        "user_id": "2",
+        "name": "Doc",
+        "email": "doctest@test.com",
+        "password": "234",
+        "role": "Doctor"
     }
 ]
