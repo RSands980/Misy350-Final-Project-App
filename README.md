@@ -22,6 +22,15 @@
 - Added logout functionality in the sidebar
 - Added a basic role-based dashboard section for Patient and Doctor users
 
+### Day 4
+- Added appointments JSON loading and storage
+- Implemented doctor appointment slot creation
+- Added doctor view for created appointment slots
+- Built patient view for available appointments
+- Implemented patient booking functionality with status updates
+- Ensured data persistence by saving updates to appointments.json
+- Cleaned code and improved overall app flow
+
 ## Planning Notes
 
 ### App Name
