@@ -142,6 +142,26 @@ if st.session_state["user"] is not None:
                 if len(available_ids) > 0:
                     selected_id = st.selectbox("Select Appointment ID to Book", available_ids)
 
+                    if st.button("Book Appointment"):
+                        for appointment in appointments:
+                            if appointment["appointment_id"] == selected_id:
+                                appointment["patient_email"] = user["email"]
+                                appointment["status"] = "booked"
+                                break
+
+                        with open(appointments_path, "w") as f:
+                            json.dump(appointments, f, indent=4)
+
+                        st.success("Appointment booked successfully")
+                        st.rerun()
+                            
+
+                        with open(appointments_path, "w") as f:
+                            json.dump(appointments, f, indent=4)
+
+                        st.success("Appointment booked successfully")
+                        st.rerun()
+
         elif user["role"] == "Doctor":
             st.subheader("Create Appointment Slot")
             appointment_date = st.date_input("Appointment Date")
