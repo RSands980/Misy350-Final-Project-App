@@ -16,6 +16,13 @@ if users_path.exists():
 else:
     users = []
 
+# Load appointments
+if appointments_path.exists():
+    with open(appointments_path, "r") as f:
+        appointmnts = json.load(f)
+else:
+    appointmnts = []
+
 # session state
 if "page" not in st.session_state:
     st.session_state["page"] = "login"
