@@ -130,55 +130,59 @@ if st.session_state["user"] is not None:
         st.divider()
 
         if user["role"] == "Patient":
-            st.subheader("Available Appointments")
+            with st.container(border=True):
+                st.subheader("Available Appointments")
 
-            for appointment in appointments:
-                if appointment["status"] == "available":
-                    st.write(
-                        "Doctor:", appointment["doctor_email"],
-                        "Date:", appointment["date"],
-                        "Time:", appointment["time"]
-                    )
-            available_ids = []
-            for appointment in appointments:
-                if appointment["status"] == "available":
-                    available_ids.append(appointment["appointment_id"])
+                for appointment in appointments:
+                    if appointment["status"] == "available":
+                        st.write(
+                            "Doctor:", appointment["doctor_email"],
+                            "Date:", appointment["date"],
+                            "Time:", appointment["time"]
+                        )
+                available_ids = []
+                for appointment in appointments:
+                    if appointment["status"] == "available":
+                        available_ids.append(appointment["appointment_id"])
 
-            if len(available_ids) > 0:
-                selected_id = st.selectbox("Select Appointment ID to Book", available_ids, key="appointment_select")
+                if len(available_ids) > 0:
+                    selected_id = st.selectbox("Select Appointment ID to Book", available_ids, key="appointment_select")
 
-                if st.button("Book Appointment", key="book_appointment_btn"):
-                    for appointment in appointments:
-                        if appointment["appointment_id"] == selected_id:
-                            appointment["patient_email"] = user["email"]
-                            appointment["status"] = "booked"
-                            break
-
-                    with open(appointments_path, "w") as f:
-                        json.dump(appointments, f, indent=4)
-
-                    st.success("Appointment booked successfully")
-                    st.rerun()
-
-            st.subheader("My Booked Appointments")
-            for appointment in appointments:
-                if appointment["patient_email"] == user["email"]:
-                    st.write(
-                        "Doctor:", appointment["doctor_email"],
-                        "Date:", appointment["date"],
-                        "Time:", appointment["time"],
-                        "Status:", appointment["status"]
-                    )
-
-                    if st.button(f"Cancel {appointment['appointment_id']}", key=f"cancel_{appointment['appointment_id']}"):
-                        appointment["patient_email"] = ""
-                        appointment["status"] = "available"
+                    if st.button("Book Appointment", key="book_appointment_btn"):
+                        for appointment in appointments:
+                            if appointment["appointment_id"] == selected_id:
+                                appointment["patient_email"] = user["email"]
+                                appointment["status"] = "booked"
+                                break
 
                         with open(appointments_path, "w") as f:
                             json.dump(appointments, f, indent=4)
 
-                        st.success("Appointment cancelled successfully")
+                        st.success("Appointment booked successfully")
                         st.rerun()
+            
+            st.divider()
+
+            with st.container(border=True):
+                st.subheader("My Booked Appointments")
+                for appointment in appointments:
+                    if appointment["patient_email"] == user["email"]:
+                        st.write(
+                            "Doctor:", appointment["doctor_email"],
+                            "Date:", appointment["date"],
+                            "Time:", appointment["time"],
+                            "Status:", appointment["status"]
+                        )
+
+                        if st.button(f"Cancel {appointment['appointment_id']}", key=f"cancel_{appointment['appointment_id']}"):
+                            appointment["patient_email"] = ""
+                            appointment["status"] = "available"
+
+                            with open(appointments_path, "w") as f:
+                                json.dump(appointments, f, indent=4)
+
+                            st.success("Appointment cancelled successfully")
+                            st.rerun()
 
         elif user["role"] == "Doctor":
             st.subheader("Create Appointment Slot")
