@@ -119,7 +119,6 @@ elif st.session_state["page"] == "register":
 
 # SIMPLE DASHBOARD (STARTED, NOT FINISHED)
 if st.session_state["user"] is not None:
-    st.divider()
 
     user = st.session_state["user"]
 
