@@ -127,6 +127,7 @@ if st.session_state["user"] is not None:
         st.subheader("Dashboard")
         st.write("Welcome:", user["name"])
         st.write("Role:", user["role"])
+        st.divider()
 
         if user["role"] == "Patient":
             st.subheader("Available Appointments")
