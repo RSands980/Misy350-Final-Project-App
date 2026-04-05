@@ -124,7 +124,11 @@ if st.session_state["user"] is not None:
     user = st.session_state["user"]
 
     with st.container(border=True):
-        st.subheader("Dashboard")
+        if user["role"] == "Patient":
+            st.title("Patient Dashboard")
+        elif user["role"] == "Doctor":
+            st.title("Doctor Dashboard")
+        
         st.write("Welcome:", user["name"])
         st.write("Role:", user["role"])
         st.divider()
