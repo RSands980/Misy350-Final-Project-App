@@ -216,6 +216,13 @@ if st.session_state["user"] is not None:
                         st.rerun()
 
             st.subheader("Booked Appointments")
+            for appointment in appointments:
+                if appointment["doctor_email"] == user["email"] and appointment["status"] == "booked":
+                    st.write(
+                        "Patient:", appointment["patient_email"],
+                        "Date:", appointment["date"],
+                        "Time:", appointment["time"]
+                    )
 
 
 
