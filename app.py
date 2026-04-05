@@ -82,7 +82,11 @@ elif st.session_state["page"] == "register":
 
     if st.button("Register", key="register_submit_btn"):
         if name == "" or email == "" or password == "":
-            st.warning("Please fill in all fields")
+            st.error("Please fill in all fields")
+        elif "@" not in email or " "  in email:
+            st.error("Please enter a valid email")
+        elif len(password) < 6:
+            st.error("Password must be at least 6 characters")
         else:
             email_exists = False
             for u in users:
