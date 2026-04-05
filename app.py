@@ -209,23 +209,26 @@ if st.session_state["user"] is not None:
 
             st.divider()
 
-            st.subheader("Your Appointment Slots")
-            for appointment in appointments:
-                if appointment["doctor_email"] == user["email"]:
-                    st.write(
-                        "Date", appointment["date"],
-                        "Time", appointment["time"],
-                        "Status", appointment["status"]
-                    )
+            with st.container(border=True):
+                st.subheader("Your Appointment Slots")
+                for appointment in appointments:
+                    if appointment["doctor_email"] == user["email"]:
+                        st.write(
+                            "Date", appointment["date"],
+                            "Time", appointment["time"],
+                            "Status", appointment["status"]
+                        )
 
-                    if st.button(f"Delete {appointment['appointment_id']}", key=f"delete_{appointment['appointment_id']}"):
-                        appointments.remove(appointment)
+                        if st.button(f"Delete {appointment['appointment_id']}", key=f"delete_{appointment['appointment_id']}"):
+                            appointments.remove(appointment)
 
-                        with open(appointments_path, "w") as f:
-                            json.dump(appointments, f, indent=4)
+                            with open(appointments_path, "w") as f:
+                                json.dump(appointments, f, indent=4)
 
-                        st.success("Appointment slot deleted successfully")
-                        st.rerun()
+                            st.success("Appointment slot deleted successfully")
+                            st.rerun()
+                
+            st.divider()
 
             st.subheader("Booked Appointments")
             for appointment in appointments:
