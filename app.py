@@ -32,16 +32,16 @@ if "user" not in st.session_state:
 
 # sidebar
 with st.sidebar:
-    if st.button("Login"):
+    if st.button("Login", key="sidebar_login_btn"):
         st.session_state["page"] = "login"
         st.rerun()
 
-    if st.button("Register"):
+    if st.button("Register", key="sidebar_register_btn"):
         st.session_state["page"] = "register"
         st.rerun()
     
     if st.session_state["user"] is not None:
-        if st.button("Logout"):
+        if st.button("Logout", key="sidebar_logout_btn"):
             st.session_state["user"] = None
             st.session_state["page"] = "login"
             st.rerun()
@@ -50,10 +50,10 @@ with st.sidebar:
 if st.session_state["page"] == "login":
     st.title("Login")
 
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
+    email = st.text_input("Email", key="login_email")
+    password = st.text_input("Password", type="password", key="login_password")
 
-    if st.button("Login"):
+    if st.button("Login", key="login_submit_btn"):
         with st.spinner("Logging in..."):
             time.sleep(1)
 
@@ -75,12 +75,12 @@ if st.session_state["page"] == "login":
 elif st.session_state["page"] == "register":
     st.title("Register")
 
-    name = st.text_input("Name")
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-    role = st.selectbox("Role", ["Patient", "Doctor"])
+    name = st.text_input("Name", key="register_name")
+    email = st.text_input("Email", key="register_email")
+    password = st.text_input("Password", type="password", key="register_password")
+    role = st.selectbox("Role", ["Patient", "Doctor"], key="register_role")
 
-    if st.button("Register"):
+    if st.button("Register", key="register_submit_btn"):
         if name == "" or email == "" or password == "":
             st.warning("Please fill in all fields")
         else:
@@ -140,9 +140,9 @@ if st.session_state["user"] is not None:
                     available_ids.append(appointment["appointment_id"])
 
             if len(available_ids) > 0:
-                selected_id = st.selectbox("Select Appointment ID to Book", available_ids)
+                selected_id = st.selectbox("Select Appointment ID to Book", available_ids, key="appointment_select")
 
-                if st.button("Book Appointment"):
+                if st.button("Book Appointment", key="book_appointment_btn"):
                     for appointment in appointments:
                         if appointment["appointment_id"] == selected_id:
                             appointment["patient_email"] = user["email"]
@@ -165,7 +165,7 @@ if st.session_state["user"] is not None:
                         "Status:", appointment["status"]
                     )
 
-                    if st.button(f"Cancel {appointment['appointment_id']}"):
+                    if st.button(f"Cancel {appointment['appointment_id']}", key=f"cancel_{appointment['appointment_id']}"):
                         appointment["patient_email"] = ""
                         appointment["status"] = "available"
 
@@ -177,9 +177,9 @@ if st.session_state["user"] is not None:
 
         elif user["role"] == "Doctor":
             st.subheader("Create Appointment Slot")
-            appointment_date = st.date_input("Appointment Date")
-            appointment_time = st.time_input("Appointment Time")
-            if st.button("Add Appointment Slot"):
+            appointment_date = st.date_input("Appointment Date", key="appointment_date")
+            appointment_time = st.time_input("Appointment Time", key="appointment_time")
+            if st.button("Add Appointment Slot", key="add_appointment_slot_btn"):
                 new_appointment = {
                     "appointment_id": str(len(appointments) + 1),
                     "doctor_email": user["email"],
@@ -206,7 +206,7 @@ if st.session_state["user"] is not None:
                         "Status", appointment["status"]
                     )
 
-                    if st.button(f"Delete {appointment['appointment_id']}"):
+                    if st.button(f"Delete {appointment['appointment_id']}", key=f"delete_{appointment['appointment_id']}"):
                         appointments.remove(appointment)
 
                         with open(appointments_path, "w") as f:
