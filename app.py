@@ -205,4 +205,18 @@ if st.session_state["user"] is not None:
                         "Time", appointment["time"],
                         "Status", appointment["status"]
                     )
+
+                    if st.button(f"Delete {appointment['appointment_id']}"):
+                        appointments.remove(appointment)
+
+                        with open(appointments_path, "w") as f:
+                            json.dump(appointments, f, indent=4)
+
+                        st.success("Appointment slot deleted successfully")
+                        st.rerun()
+
+            st.subheader("Booked Appointments")
+
+
+
                     
