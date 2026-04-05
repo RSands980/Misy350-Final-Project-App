@@ -184,27 +184,30 @@ if st.session_state["user"] is not None:
                             st.success("Appointment cancelled successfully")
                             st.rerun()
 
+
         elif user["role"] == "Doctor":
-            st.subheader("Create Appointment Slot")
-            appointment_date = st.date_input("Appointment Date", key="appointment_date")
-            appointment_time = st.time_input("Appointment Time", key="appointment_time")
-            if st.button("Add Appointment Slot", key="add_appointment_slot_btn"):
-                new_appointment = {
-                    "appointment_id": str(len(appointments) + 1),
-                    "doctor_email": user["email"],
-                    "patient_email": "",
-                    "date": str(appointment_date),
-                    "time": str(appointment_time),
-                    "status": "available"
-                 }
-                
-                appointments.append(new_appointment)
+            with st.container(border=True):
+                st.subheader("Create Appointment Slot")
+                appointment_date = st.date_input("Appointment Date", key="appointment_date")
+                appointment_time = st.time_input("Appointment Time", key="appointment_time")
+                if st.button("Add Appointment Slot", key="add_appointment_slot_btn"):
+                    new_appointment = {
+                        "appointment_id": str(len(appointments) + 1),
+                        "doctor_email": user["email"],
+                        "patient_email": "",
+                        "date": str(appointment_date),
+                        "time": str(appointment_time),
+                        "status": "available"
+                    }
+                    appointments.append(new_appointment)
 
-                with open(appointments_path, "w") as f:
-                    json.dump(appointments, f, indent=4)
+                    with open(appointments_path, "w") as f:
+                        json.dump(appointments, f, indent=4)
 
-                st.success("Appointment slot added successfully")
-                st.rerun()
+                    st.success("Appointment slot added successfully")
+                    st.rerun()
+
+            st.divider()
 
             st.subheader("Your Appointment Slots")
             for appointment in appointments:
@@ -228,10 +231,10 @@ if st.session_state["user"] is not None:
             for appointment in appointments:
                 if appointment["doctor_email"] == user["email"] and appointment["status"] == "booked":
                     st.write(
-                        "Patient:", appointment["patient_email"],
-                        "Date:", appointment["date"],
-                        "Time:", appointment["time"]
-                    )
+                           "Patient:", appointment["patient_email"],
+                            "Date:", appointment["date"],
+                            "Time:", appointment["time"]
+                        )
 
 
 
