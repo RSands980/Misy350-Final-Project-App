@@ -194,59 +194,62 @@ if st.session_state["user"] is not None:
 
 
         elif user["role"] == "Doctor":
-            with st.container(border=True):
-                st.subheader("Create Appointment Slot")
-                appointment_date = st.date_input("Appointment Date", key="appointment_date")
-                appointment_time = st.time_input("Appointment Time", key="appointment_time")
-                if st.button("Add Appointment Slot", key="add_appointment_slot_btn"):
-                    new_appointment = {
-                        "appointment_id": str(len(appointments) + 1),
-                        "doctor_email": user["email"],
-                        "patient_email": "",
-                        "date": str(appointment_date),
-                        "time": str(appointment_time),
-                        "status": "available"
-                    }
-                    appointments.append(new_appointment)
+            col1, col2 = st.columns(2)
 
-                    with open(appointments_path, "w") as f:
-                        json.dump(appointments, f, indent=4)
+            with col1:
+                with st.container(border=True):
+                    st.subheader("Create Appointment Slot")
+                    appointment_date = st.date_input("Appointment Date", key="appointment_date")
+                    appointment_time = st.time_input("Appointment Time", key="appointment_time")
+                    if st.button("Add Appointment Slot", key="add_appointment_slot_btn"):
+                        new_appointment = {
+                            "appointment_id": str(len(appointments) + 1),
+                            "doctor_email": user["email"],
+                            "patient_email": "",
+                            "date": str(appointment_date),
+                            "time": str(appointment_time),
+                            "status": "available"
+                        }
+                        appointments.append(new_appointment)
 
-                    st.success("Appointment slot added successfully")
-                    st.rerun()
+                        with open(appointments_path, "w") as f:
+                            json.dump(appointments, f, indent=4)
 
-            st.divider()
+                        st.success("Appointment slot added successfully")
+                        st.rerun()
 
-            with st.container(border=True):
-                st.subheader("Your Appointment Slots")
-                for appointment in appointments:
-                    if appointment["doctor_email"] == user["email"]:
-                        st.write(
-                            "Date", appointment["date"],
-                            "Time", appointment["time"],
-                            "Status", appointment["status"]
-                        )
+                st.divider()
 
-                        if st.button(f"Delete {appointment['appointment_id']}", key=f"delete_{appointment['appointment_id']}"):
-                            appointments.remove(appointment)
+                with st.container(border=True):
+                    st.subheader("Booked Appointments")
+                    for appointment in appointments:
+                        if appointment["doctor_email"] == user["email"] and appointment["status"] == "booked":
+                            st.write(
+                                "Patient:", appointment["patient_email"],
+                                    "Date:", appointment["date"],
+                                    "Time:", appointment["time"]
+                                )
 
-                            with open(appointments_path, "w") as f:
-                                json.dump(appointments, f, indent=4)
-
-                            st.success("Appointment slot deleted successfully")
-                            st.rerun()
-                
-            st.divider()
-
-            with st.container(border=True):
-                st.subheader("Booked Appointments")
-                for appointment in appointments:
-                    if appointment["doctor_email"] == user["email"] and appointment["status"] == "booked":
-                        st.write(
-                            "Patient:", appointment["patient_email"],
-                                "Date:", appointment["date"],
-                                "Time:", appointment["time"]
+            with col2:
+                with st.container(border=True):
+                    st.subheader("Your Appointment Slots")
+                    for appointment in appointments:
+                        if appointment["doctor_email"] == user["email"]:
+                            st.write(
+                                "Date", appointment["date"],
+                                "Time", appointment["time"],
+                                "Status", appointment["status"]
                             )
+
+                            if st.button(f"Delete {appointment['appointment_id']}", key=f"delete_{appointment['appointment_id']}"):
+                                appointments.remove(appointment)
+
+                                with open(appointments_path, "w") as f:
+                                    json.dump(appointments, f, indent=4)
+
+                                st.success("Appointment slot deleted successfully")
+                                st.rerun()
+                    
 
 
 
