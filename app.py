@@ -155,6 +155,26 @@ if st.session_state["user"] is not None:
                     st.success("Appointment booked successfully")
                     st.rerun()
 
+            st.subheader("My Booked Appointments")
+            for appointment in appointments:
+                if appointment["patient_email"] == user["email"]:
+                    st.write(
+                        "Doctor:", appointment["doctor_email"],
+                        "Date:", appointment["date"],
+                        "Time:", appointment["time"],
+                        "Status:", appointment["status"]
+                    )
+
+                    if st.button(f"Cancel {appointment['appointment_id']}"):
+                        appointment["patient_email"] = ""
+                        appointment["status"] = "available"
+
+                        with open(appointments_path, "w") as f:
+                            json.dump(appointments, f, indent=4)
+
+                        st.success("Appointment cancelled successfully")
+                        st.rerun()
+
         elif user["role"] == "Doctor":
             st.subheader("Create Appointment Slot")
             appointment_date = st.date_input("Appointment Date")

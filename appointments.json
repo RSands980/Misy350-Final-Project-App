@@ -2,9 +2,9 @@
     {
         "appointment_id": "1",
         "doctor_email": "doctest@test.com",
-        "patient_email": "tes@test.com",
+        "patient_email": "",
         "date": "2026-04-09",
         "time": "12:30:00",
-        "status": "booked"
+        "status": "available"
     }
 ]
