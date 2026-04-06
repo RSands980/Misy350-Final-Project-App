@@ -31,6 +31,14 @@
 - Ensured data persistence by saving updates to appointments.json
 - Cleaned code and improved overall app flow
 
+### Day 5
+- Improved dashboard layout using columns and containers for both Patient and Doctor views
+- Added appointment ID display to make booking selection clearer
+- Implemented empty state messages for available and booked appointments
+- Cleaned up UI spacing and section structure for better readability
+- Final testing of all workflows (login, booking, cancel, create, delete)
+- Prepared application for final submission
+
 ## Planning Notes
 
 ### App Name
