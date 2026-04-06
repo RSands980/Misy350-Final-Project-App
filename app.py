@@ -167,13 +167,20 @@ if st.session_state["user"] is not None:
 
                             st.success("Appointment booked successfully")
                             st.rerun()
+                    
+                    else: 
+                        st.write("No available appointments")
             
 
             with col2:
                 with st.container(border=True):
                     st.subheader("My Booked Appointments")
+
+                    found_booked = False
+
                     for appointment in appointments:
                         if appointment["patient_email"] == user["email"]:
+                            found_booked = True
                             st.write(
                                 "Doctor:", appointment["doctor_email"],
                                 "Date:", appointment["date"],
@@ -190,6 +197,10 @@ if st.session_state["user"] is not None:
 
                                 st.success("Appointment cancelled successfully")
                                 st.rerun()
+                    if not found_booked:
+                        st.write("No booked appointments")
+
+                    
 
 
         elif user["role"] == "Doctor":
@@ -235,9 +246,9 @@ if st.session_state["user"] is not None:
                     for appointment in appointments:
                         if appointment["doctor_email"] == user["email"]:
                             st.write(
-                                "Date", appointment["date"],
-                                "Time", appointment["time"],
-                                "Status", appointment["status"]
+                                "Date:", appointment["date"],
+                                "Time:", appointment["time"],
+                                "Status:", appointment["status"]
                             )
 
                             if st.button(f"Delete {appointment['appointment_id']}", key=f"delete_{appointment['appointment_id']}"):
