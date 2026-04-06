@@ -117,7 +117,7 @@ elif st.session_state["page"] == "register":
                 st.session_state["page"] = "login"
                 st.rerun()
 
-# SIMPLE DASHBOARD (STARTED, NOT FINISHED)
+# SIMPLE DASHBOARD (FINISHED)
 if st.session_state["user"] is not None:
 
     user = st.session_state["user"]
@@ -168,7 +168,6 @@ if st.session_state["user"] is not None:
                             st.success("Appointment booked successfully")
                             st.rerun()
             
-            st.divider()
 
             with col2:
                 with st.container(border=True):
