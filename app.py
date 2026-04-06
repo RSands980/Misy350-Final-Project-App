@@ -232,13 +232,19 @@ if st.session_state["user"] is not None:
 
                 with st.container(border=True):
                     st.subheader("Booked Appointments")
+
+                    found_doctor_booked = False
+
                     for appointment in appointments:
                         if appointment["doctor_email"] == user["email"] and appointment["status"] == "booked":
+                            found_doctor_booked = True
                             st.write(
                                 "Patient:", appointment["patient_email"],
                                     "Date:", appointment["date"],
                                     "Time:", appointment["time"]
                                 )
+                    if not found_doctor_booked:
+                        st.write("No booked appointments")
 
             with col2:
                 with st.container(border=True):
