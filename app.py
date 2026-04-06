@@ -34,10 +34,12 @@ if "user" not in st.session_state:
 with st.sidebar:
     if st.button("Login", key="sidebar_login_btn"):
         st.session_state["page"] = "login"
+        st.session_state["user"] = None
         st.rerun()
 
     if st.button("Register", key="sidebar_register_btn"):
         st.session_state["page"] = "register"
+        st.session_state["user"] = None
         st.rerun()
     
     if st.session_state["user"] is not None:
