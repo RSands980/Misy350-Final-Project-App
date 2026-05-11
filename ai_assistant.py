@@ -31,11 +31,25 @@ class ClinicAIAssistant:
                 "You can use the appointment ID shown in the dashboard to book one of the available appointments."
             )
 
-        if "completed" in question_lower:
+        if "booked" in question_lower and "appointment" in question_lower:
             return (
-                "Completed appointments are shown as history in ClinicConnect. "
-                "Once an appointment is completed, it cannot be cancelled, deleted, or changed back. "
-                "This protects the appointment record."
+                "Here is what I found from the current app data:\n\n"
+                f"{app_context}\n\n"
+                "Booked appointments can be reviewed in the dashboard. Doctors can mark booked appointments as completed."
+            )
+
+        if "active" in question_lower and "appointment" in question_lower:
+            return (
+                "Here is what I found from the current app data:\n\n"
+                f"{app_context}\n\n"
+                "Active appointments are appointments that are currently booked but not completed yet."
+            )
+
+        if "completed" in question_lower and "appointment" in question_lower:
+            return (
+                "Here is what I found from the current app data:\n\n"
+                f"{app_context}\n\n"
+                "Completed appointments are locked and kept as history. They cannot be cancelled, deleted, or changed back."
             )
 
         if "cancel" in question_lower:
@@ -47,20 +61,20 @@ class ClinicAIAssistant:
         if user_role == "Patient":
             return (
                 "ClinicConnect helps patients view available appointments, book appointments, cancel active appointments, "
-                "and view completed appointment history. For an appointment, you may want to bring your ID, insurance information if needed, "
-                "and a short list of questions or concerns. For medical advice, contact a healthcare professional."
+                "and view completed appointment history.\n\n"
+                f"Current app data:\n\n{app_context}"
             )
 
         if user_role == "Doctor":
             return (
                 "ClinicConnect helps doctors create appointment slots, view booked appointments, mark appointments as completed, "
-                "and review completed appointment history. For follow-up questions, consider asking about symptoms, timing, severity, "
-                "medications, and whether the patient needs another visit."
+                "and review completed appointment history.\n\n"
+                f"Current app data:\n\n{app_context}"
             )
 
         return (
-            "ClinicConnect helps manage patient and doctor appointment workflows. "
-            "You can use it to book, cancel, complete, and review appointments."
+            "ClinicConnect helps manage patient and doctor appointment workflows.\n\n"
+            f"Current app data:\n\n{app_context}"
         )
 
     def get_response(self, user_role, question, app_context):
@@ -80,7 +94,7 @@ class ClinicAIAssistant:
         system_message = """
         You are the ClinicConnect assistant for a student-built appointment scheduling app.
         Use the provided app context to answer questions about available appointments,
-        active appointments, completed appointments, and basic app workflow.
+        active appointments, booked appointments, completed appointments, and basic app workflow.
         Do not provide medical diagnosis, treatment plans, medication instructions, or emergency advice.
         If the user asks for medical advice, tell them to contact a healthcare professional.
         Keep answers short, clear, and helpful.
