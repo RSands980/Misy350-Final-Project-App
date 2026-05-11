@@ -76,6 +76,30 @@ class AppointmentService:
 
         return available
 
+    def get_patient_active_appointments(self, patient_email):
+        active = []
+
+        for appointment in self.appointments:
+            if (
+                appointment["patient_email"] == patient_email
+                and appointment["status"] == "booked"
+            ):
+                active.append(appointment)
+
+        return active
+
+    def get_patient_completed_appointments(self, patient_email):
+        completed = []
+
+        for appointment in self.appointments:
+            if (
+                appointment["patient_email"] == patient_email
+                and appointment["status"] == "completed"
+            ):
+                completed.append(appointment)
+
+        return completed
+
     def get_patient_appointments(self, patient_email):
         patient_appointments = []
 
@@ -98,10 +122,25 @@ class AppointmentService:
         booked = []
 
         for appointment in self.appointments:
-            if appointment["doctor_email"] == doctor_email and appointment["status"] == "booked":
+            if (
+                appointment["doctor_email"] == doctor_email
+                and appointment["status"] == "booked"
+            ):
                 booked.append(appointment)
 
         return booked
+
+    def get_doctor_completed_appointments(self, doctor_email):
+        completed = []
+
+        for appointment in self.appointments:
+            if (
+                appointment["doctor_email"] == doctor_email
+                and appointment["status"] == "completed"
+            ):
+                completed.append(appointment)
+
+        return completed
 
     def book_appointment(self, appointment_id, patient_email):
         for appointment in self.appointments:
@@ -117,7 +156,7 @@ class AppointmentService:
 
                 return {
                     "success": True,
-                    "message": "Appointment booked successfully",
+                    "message": "Appointment booked successfully.",
                 }
 
         return {
@@ -134,12 +173,24 @@ class AppointmentService:
                         "message": "You can only cancel your own appointment.",
                     }
 
+                if appointment["status"] == "completed":
+                    return {
+                        "success": False,
+                        "message": "Completed appointments cannot be cancelled.",
+                    }
+
+                if appointment["status"] != "booked":
+                    return {
+                        "success": False,
+                        "message": "Only booked appointments can be cancelled.",
+                    }
+
                 appointment["patient_email"] = ""
                 appointment["status"] = "available"
 
                 return {
                     "success": True,
-                    "message": "Appointment cancelled successfully",
+                    "message": "Appointment cancelled successfully.",
                 }
 
         return {
@@ -161,7 +212,7 @@ class AppointmentService:
 
         return {
             "success": True,
-            "message": "Appointment slot added successfully",
+            "message": "Appointment slot added successfully.",
             "appointment": new_appointment,
         }
 
@@ -174,11 +225,56 @@ class AppointmentService:
                         "message": "You can only delete your own appointment slot.",
                     }
 
+                if appointment["status"] == "completed":
+                    return {
+                        "success": False,
+                        "message": "Completed appointments cannot be deleted.",
+                    }
+
+                if appointment["status"] == "booked":
+                    return {
+                        "success": False,
+                        "message": "Booked appointments should be completed or cancelled, not deleted.",
+                    }
+
                 self.appointments.remove(appointment)
 
                 return {
                     "success": True,
-                    "message": "Appointment slot deleted successfully",
+                    "message": "Appointment slot deleted successfully.",
+                }
+
+        return {
+            "success": False,
+            "message": "Appointment was not found.",
+        }
+
+    def complete_appointment(self, appointment_id, doctor_email):
+        for appointment in self.appointments:
+            if appointment["appointment_id"] == appointment_id:
+                if appointment["doctor_email"] != doctor_email:
+                    return {
+                        "success": False,
+                        "message": "You can only complete your own appointments.",
+                    }
+
+                if appointment["status"] == "completed":
+                    return {
+                        "success": False,
+                        "message": "This appointment is already completed.",
+                    }
+
+                if appointment["status"] != "booked":
+                    return {
+                        "success": False,
+                        "message": "Only booked appointments can be completed.",
+                    }
+
+                appointment["status"] = "completed"
+
+                return {
+                    "success": True,
+                    "message": "Appointment marked as completed.",
                 }
 
         return {

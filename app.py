@@ -1,11 +1,63 @@
 import streamlit as st
 import time
+from datetime import datetime
 
 from data_store import DataStore
 from services import AuthService, AppointmentService
 
 
 st.set_page_config(page_title="ClinicConnect", layout="wide")
+
+
+def format_time(time_value):
+    try:
+        parsed_time = datetime.strptime(time_value, "%H:%M:%S")
+        return parsed_time.strftime("%I:%M %p").lstrip("0")
+    except ValueError:
+        try:
+            parsed_time = datetime.strptime(time_value, "%H:%M")
+            return parsed_time.strftime("%I:%M %p").lstrip("0")
+        except ValueError:
+            return time_value
+
+
+def get_time_options():
+    times = []
+
+    for hour in range(8, 19):
+        for minute in [0, 15, 30, 45]:
+            if hour == 18 and minute > 0:
+                continue
+
+            time_24 = f"{hour:02d}:{minute:02d}:00"
+            time_display = format_time(time_24)
+            times.append((time_display, time_24))
+
+    return times
+
+
+def show_message(result):
+    if result["success"]:
+        st.success(result["message"])
+        time.sleep(1)
+    else:
+        st.error(result["message"])
+
+
+def show_appointment_card(appointment, show_patient=False, show_doctor=False):
+    with st.container(border=True):
+        st.write("Appointment ID:", appointment["appointment_id"])
+
+        if show_doctor:
+            st.write("Doctor:", appointment["doctor_email"])
+
+        if show_patient:
+            st.write("Patient:", appointment["patient_email"])
+
+        st.write("Date:", appointment["date"])
+        st.write("Time:", format_time(appointment["time"]))
+        st.write("Status:", appointment["status"].title())
+
 
 # Data/service setup
 store = DataStore()
@@ -69,7 +121,8 @@ if st.session_state["page"] == "login":
         if found_user is not None:
             st.session_state["user"] = found_user
             st.session_state["page"] = "dashboard"
-            st.success("Logged in successfully")
+            st.success("Logged in successfully.")
+            time.sleep(1)
             st.rerun()
         else:
             st.error("Invalid email or password")
@@ -92,6 +145,7 @@ elif st.session_state["page"] == "register":
             if result["success"]:
                 store.save_users(users)
                 st.success(result["message"])
+                time.sleep(1)
                 st.session_state["page"] = "login"
                 st.rerun()
             else:
@@ -123,13 +177,11 @@ if st.session_state["user"] is not None:
                     available_appointments = appointment_service.get_available_appointments()
                     available_ids = []
 
+                    if len(available_appointments) == 0:
+                        st.write("No available appointments")
+
                     for appointment in available_appointments:
-                        st.write(
-                            "Appointment ID:", appointment["appointment_id"],
-                            "Doctor:", appointment["doctor_email"],
-                            "Date:", appointment["date"],
-                            "Time:", appointment["time"]
-                        )
+                        show_appointment_card(appointment, show_doctor=True)
                         available_ids.append(appointment["appointment_id"])
 
                     if len(available_ids) > 0:
@@ -145,33 +197,25 @@ if st.session_state["user"] is not None:
                                 user["email"]
                             )
 
+                            show_message(result)
+
                             if result["success"]:
                                 store.save_appointments(appointments)
-                                st.success(result["message"])
                                 st.rerun()
-                            else:
-                                st.error(result["message"])
-                    else:
-                        st.write("No available appointments")
 
             with col2:
                 with st.container(border=True):
-                    st.subheader("My Booked Appointments")
+                    st.subheader("My Active Appointments")
 
-                    patient_appointments = appointment_service.get_patient_appointments(
+                    active_appointments = appointment_service.get_patient_active_appointments(
                         user["email"]
                     )
 
-                    if len(patient_appointments) == 0:
-                        st.write("No booked appointments")
+                    if len(active_appointments) == 0:
+                        st.write("No active appointments")
 
-                    for appointment in patient_appointments:
-                        st.write(
-                            "Doctor:", appointment["doctor_email"],
-                            "Date:", appointment["date"],
-                            "Time:", appointment["time"],
-                            "Status:", appointment["status"]
-                        )
+                    for appointment in active_appointments:
+                        show_appointment_card(appointment, show_doctor=True)
 
                         if st.button(
                             f"Cancel {appointment['appointment_id']}",
@@ -182,12 +226,26 @@ if st.session_state["user"] is not None:
                                 user["email"]
                             )
 
+                            show_message(result)
+
                             if result["success"]:
                                 store.save_appointments(appointments)
-                                st.success(result["message"])
                                 st.rerun()
-                            else:
-                                st.error(result["message"])
+
+                st.divider()
+
+                with st.container(border=True):
+                    st.subheader("Completed Appointment History")
+
+                    completed_appointments = appointment_service.get_patient_completed_appointments(
+                        user["email"]
+                    )
+
+                    if len(completed_appointments) == 0:
+                        st.write("No completed appointments yet")
+
+                    for appointment in completed_appointments:
+                        show_appointment_card(appointment, show_doctor=True)
 
         # Doctor dashboard
         elif user["role"] == "Doctor":
@@ -201,10 +259,25 @@ if st.session_state["user"] is not None:
                         "Appointment Date",
                         key="appointment_date"
                     )
-                    appointment_time = st.time_input(
+
+                    time_options = get_time_options()
+                    time_labels = []
+
+                    for label, value in time_options:
+                        time_labels.append(label)
+
+                    selected_time_label = st.selectbox(
                         "Appointment Time",
+                        time_labels,
                         key="appointment_time"
                     )
+
+                    appointment_time = ""
+
+                    for label, value in time_options:
+                        if label == selected_time_label:
+                            appointment_time = value
+                            break
 
                     if st.button("Add Appointment Slot", key="add_appointment_slot_btn"):
                         result = appointment_service.create_appointment_slot(
@@ -213,12 +286,11 @@ if st.session_state["user"] is not None:
                             appointment_time
                         )
 
+                        show_message(result)
+
                         if result["success"]:
                             store.save_appointments(appointments)
-                            st.success(result["message"])
                             st.rerun()
-                        else:
-                            st.error(result["message"])
 
                 st.divider()
 
@@ -233,11 +305,37 @@ if st.session_state["user"] is not None:
                         st.write("No booked appointments")
 
                     for appointment in booked_appointments:
-                        st.write(
-                            "Patient:", appointment["patient_email"],
-                            "Date:", appointment["date"],
-                            "Time:", appointment["time"]
-                        )
+                        show_appointment_card(appointment, show_patient=True)
+
+                        if st.button(
+                            f"Mark Completed {appointment['appointment_id']}",
+                            key=f"complete_{appointment['appointment_id']}"
+                        ):
+                            result = appointment_service.complete_appointment(
+                                appointment["appointment_id"],
+                                user["email"]
+                            )
+
+                            show_message(result)
+
+                            if result["success"]:
+                                store.save_appointments(appointments)
+                                st.rerun()
+
+                st.divider()
+
+                with st.container(border=True):
+                    st.subheader("Completed Appointment History")
+
+                    completed_appointments = appointment_service.get_doctor_completed_appointments(
+                        user["email"]
+                    )
+
+                    if len(completed_appointments) == 0:
+                        st.write("No completed appointments yet")
+
+                    for appointment in completed_appointments:
+                        show_appointment_card(appointment, show_patient=True)
 
             with col2:
                 with st.container(border=True):
@@ -251,24 +349,24 @@ if st.session_state["user"] is not None:
                         st.write("No appointment slots yet")
 
                     for appointment in doctor_appointments:
-                        st.write(
-                            "Date:", appointment["date"],
-                            "Time:", appointment["time"],
-                            "Status:", appointment["status"]
-                        )
+                        show_appointment_card(appointment)
 
-                        if st.button(
-                            f"Delete {appointment['appointment_id']}",
-                            key=f"delete_{appointment['appointment_id']}"
-                        ):
-                            result = appointment_service.delete_appointment_slot(
-                                appointment["appointment_id"],
-                                user["email"]
-                            )
+                        if appointment["status"] == "available":
+                            if st.button(
+                                f"Delete {appointment['appointment_id']}",
+                                key=f"delete_{appointment['appointment_id']}"
+                            ):
+                                result = appointment_service.delete_appointment_slot(
+                                    appointment["appointment_id"],
+                                    user["email"]
+                                )
 
-                            if result["success"]:
-                                store.save_appointments(appointments)
-                                st.success(result["message"])
-                                st.rerun()
-                            else:
-                                st.error(result["message"])
+                                show_message(result)
+
+                                if result["success"]:
+                                    store.save_appointments(appointments)
+                                    st.rerun()
+                        elif appointment["status"] == "booked":
+                            st.info("Booked appointments can be completed from the Booked Appointments section.")
+                        elif appointment["status"] == "completed":
+                            st.info("Completed appointments are locked and kept as history.")
