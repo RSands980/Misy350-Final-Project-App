@@ -60,36 +60,6 @@ def show_appointment_card(appointment, show_patient=False, show_doctor=False):
         st.write("Status:", appointment["status"].title())
 
 
-def show_ai_assistant(user):
-    st.divider()
-
-    with st.container(border=True):
-        st.subheader("ClinicConnect AI Assistant")
-
-        if user["role"] == "Patient":
-            st.write("Ask about preparing for appointments, what to bring, or how to use the app.")
-            default_question = "What should I bring to my appointment?"
-        else:
-            st.write("Ask for help summarizing notes or thinking of follow-up questions.")
-            default_question = "Suggest follow-up questions for a patient appointment."
-
-        question = st.text_area(
-            "Ask the assistant a question",
-            value=default_question,
-            key=f"ai_question_{user['role']}"
-        )
-
-        if st.button("Ask AI Assistant", key=f"ask_ai_{user['role']}"):
-            with st.spinner("Thinking..."):
-                result = ai_assistant.get_response(user["role"], question)
-
-            if result["success"]:
-                st.success("AI response generated.")
-                st.write(result["message"])
-            else:
-                st.warning(result["message"])
-
-
 # Data/service setup
 store = DataStore()
 users = store.load_users()
@@ -98,6 +68,126 @@ appointments = store.load_appointments()
 auth_service = AuthService(users)
 appointment_service = AppointmentService(appointments)
 ai_assistant = ClinicAIAssistant()
+
+
+def build_ai_context(user):
+    role = user["role"]
+
+    if role == "Patient":
+        available = appointment_service.get_available_appointments()
+        active = appointment_service.get_patient_active_appointments(user["email"])
+        completed = appointment_service.get_patient_completed_appointments(user["email"])
+
+        context_lines = ["Current ClinicConnect data for this patient:"]
+
+        context_lines.append("\nAvailable appointments:")
+        if len(available) == 0:
+            context_lines.append("- No available appointments right now.")
+        else:
+            for appointment in available:
+                context_lines.append(
+                    f"- Appointment {appointment['appointment_id']} with {appointment['doctor_email']} "
+                    f"on {appointment['date']} at {format_time(appointment['time'])}"
+                )
+
+        context_lines.append("\nPatient active appointments:")
+        if len(active) == 0:
+            context_lines.append("- No active appointments.")
+        else:
+            for appointment in active:
+                context_lines.append(
+                    f"- Appointment {appointment['appointment_id']} with {appointment['doctor_email']} "
+                    f"on {appointment['date']} at {format_time(appointment['time'])}"
+                )
+
+        context_lines.append("\nPatient completed appointments:")
+        if len(completed) == 0:
+            context_lines.append("- No completed appointments.")
+        else:
+            for appointment in completed:
+                context_lines.append(
+                    f"- Appointment {appointment['appointment_id']} with {appointment['doctor_email']} "
+                    f"on {appointment['date']} at {format_time(appointment['time'])}"
+                )
+
+        return "\n".join(context_lines)
+
+    if role == "Doctor":
+        booked = appointment_service.get_doctor_booked_appointments(user["email"])
+        completed = appointment_service.get_doctor_completed_appointments(user["email"])
+        all_slots = appointment_service.get_doctor_appointments(user["email"])
+
+        context_lines = ["Current ClinicConnect data for this doctor:"]
+
+        context_lines.append("\nBooked appointments:")
+        if len(booked) == 0:
+            context_lines.append("- No booked appointments.")
+        else:
+            for appointment in booked:
+                context_lines.append(
+                    f"- Appointment {appointment['appointment_id']} with patient {appointment['patient_email']} "
+                    f"on {appointment['date']} at {format_time(appointment['time'])}"
+                )
+
+        context_lines.append("\nCompleted appointments:")
+        if len(completed) == 0:
+            context_lines.append("- No completed appointments.")
+        else:
+            for appointment in completed:
+                context_lines.append(
+                    f"- Appointment {appointment['appointment_id']} with patient {appointment['patient_email']} "
+                    f"on {appointment['date']} at {format_time(appointment['time'])}"
+                )
+
+        context_lines.append("\nAll doctor appointment slots:")
+        if len(all_slots) == 0:
+            context_lines.append("- No appointment slots.")
+        else:
+            for appointment in all_slots:
+                context_lines.append(
+                    f"- Appointment {appointment['appointment_id']} on {appointment['date']} "
+                    f"at {format_time(appointment['time'])}, status: {appointment['status']}"
+                )
+
+        return "\n".join(context_lines)
+
+    return "No app context available."
+
+
+def show_ai_assistant(user):
+    st.divider()
+
+    with st.container(border=True):
+        st.subheader("ClinicConnect AI Assistant")
+
+        if user["role"] == "Patient":
+            st.write("Ask about available appointments, appointment preparation, or how to use the app.")
+            default_question = "What appointments are available?"
+        else:
+            st.write("Ask about booked appointments, completed appointments, or follow-up questions.")
+            default_question = "What appointments are currently booked?"
+
+        question = st.text_area(
+            "Ask the assistant a question",
+            value=default_question,
+            key=f"ai_question_{user['role']}"
+        )
+
+        if st.button("Ask AI Assistant", key=f"ask_ai_{user['role']}"):
+            app_context = build_ai_context(user)
+
+            with st.spinner("Thinking..."):
+                result = ai_assistant.get_response(
+                    user["role"],
+                    question,
+                    app_context
+                )
+
+            if result["success"]:
+                st.success("Assistant response:")
+                st.write(result["message"])
+            else:
+                st.warning(result["message"])
 
 
 # Session state setup
