@@ -1,37 +1,33 @@
 import streamlit as st
-import json
-from pathlib import Path
 import time
+
+from data_store import DataStore
+from services import AuthService, AppointmentService
+
 
 st.set_page_config(page_title="ClinicConnect", layout="wide")
 
-# file paths
-users_path = Path("users.json")
-appointments_path = Path("appointments.json")
+# Data/service setup
+store = DataStore()
+users = store.load_users()
+appointments = store.load_appointments()
 
-# load users
-if users_path.exists():
-    with open(users_path, "r") as f:
-        users = json.load(f)
-else:
-    users = []
+auth_service = AuthService(users)
+appointment_service = AppointmentService(appointments)
 
-# Load appointments
-if appointments_path.exists():
-    with open(appointments_path, "r") as f:
-        appointments = json.load(f)
-else:
-    appointments = []
 
-# session state
+# Session state setup
 if "page" not in st.session_state:
     st.session_state["page"] = "login"
 
 if "user" not in st.session_state:
     st.session_state["user"] = None
 
-# sidebar
+
+# Sidebar navigation
 with st.sidebar:
+    st.title("ClinicConnect")
+
     if st.button("Login", key="sidebar_login_btn"):
         st.session_state["page"] = "login"
         st.session_state["user"] = None
@@ -41,16 +37,26 @@ with st.sidebar:
         st.session_state["page"] = "register"
         st.session_state["user"] = None
         st.rerun()
-    
+
     if st.session_state["user"] is not None:
+        st.divider()
+        st.write("Logged in as:")
+        st.write(st.session_state["user"]["name"])
+
         if st.button("Logout", key="sidebar_logout_btn"):
             st.session_state["user"] = None
             st.session_state["page"] = "login"
             st.rerun()
 
-# LOGIN PAGE
+
+# Login page
 if st.session_state["page"] == "login":
     st.title("Login")
+
+    with st.container(border=True):
+        st.subheader("Test Accounts")
+        st.write("Patient: patient@test.com / patient123")
+        st.write("Doctor: doctor@test.com / doctor123")
 
     email = st.text_input("Email", key="login_email")
     password = st.text_input("Password", type="password", key="login_password")
@@ -58,12 +64,7 @@ if st.session_state["page"] == "login":
     if st.button("Login", key="login_submit_btn"):
         with st.spinner("Logging in..."):
             time.sleep(1)
-
-            found_user = None
-            for u in users:
-                if u["email"] == email and u["password"] == password:
-                    found_user = u
-                    break
+            found_user = auth_service.validate_login(email, password)
 
         if found_user is not None:
             st.session_state["user"] = found_user
@@ -73,7 +74,8 @@ if st.session_state["page"] == "login":
         else:
             st.error("Invalid email or password")
 
-# REGISTER PAGE
+
+# Register page
 elif st.session_state["page"] == "register":
     st.title("Register")
 
@@ -83,45 +85,21 @@ elif st.session_state["page"] == "register":
     role = st.selectbox("Role", ["Patient", "Doctor"], key="register_role")
 
     if st.button("Register", key="register_submit_btn"):
-        if name == "" or email == "" or password == "":
-            st.error("Please fill in all fields")
-        elif "@" not in email or " "  in email:
-            st.error("Please enter a valid email")
-        elif len(password) < 6:
-            st.error("Password must be at least 6 characters")
-        else:
-            email_exists = False
-            for u in users:
-                if u["email"] == email:
-                    email_exists = True
-                    break
+        with st.spinner("Creating account..."):
+            time.sleep(1)
+            result = auth_service.register_user(name, email, password, role)
 
-            if email_exists:
-                st.error("Email already exists")
-            else:
-                with st.spinner("Creating account..."):
-                    time.sleep(1)
-
-                    new_user = {
-                        "user_id": str(len(users) + 1),
-                        "name": name,
-                        "email": email,
-                        "password": password,
-                        "role": role
-                    }
-
-                    users.append(new_user)
-
-                    with open(users_path, "w") as f:
-                        json.dump(users, f, indent=4)
-
-                st.success("Account created successfully")
+            if result["success"]:
+                store.save_users(users)
+                st.success(result["message"])
                 st.session_state["page"] = "login"
                 st.rerun()
+            else:
+                st.error(result["message"])
 
-# SIMPLE DASHBOARD (FINISHED)
+
+# Dashboard pages
 if st.session_state["user"] is not None:
-
     user = st.session_state["user"]
 
     with st.container(border=True):
@@ -129,11 +107,12 @@ if st.session_state["user"] is not None:
             st.title("Patient Dashboard")
         elif user["role"] == "Doctor":
             st.title("Doctor Dashboard")
-        
+
         st.write("Welcome:", user["name"])
         st.write("Role:", user["role"])
         st.divider()
 
+        # Patient dashboard
         if user["role"] == "Patient":
             col1, col2 = st.columns(2)
 
@@ -141,134 +120,155 @@ if st.session_state["user"] is not None:
                 with st.container(border=True):
                     st.subheader("Available Appointments")
 
-                    for appointment in appointments:
-                        if appointment["status"] == "available":
-                            st.write(
-                                "Appointment ID:", appointment["appointment_id"],
-                                "Doctor:", appointment["doctor_email"],
-                                "Date:", appointment["date"],
-                                "Time:", appointment["time"]
-                            )
+                    available_appointments = appointment_service.get_available_appointments()
                     available_ids = []
-                    for appointment in appointments:
-                        if appointment["status"] == "available":
-                            available_ids.append(appointment["appointment_id"])
+
+                    for appointment in available_appointments:
+                        st.write(
+                            "Appointment ID:", appointment["appointment_id"],
+                            "Doctor:", appointment["doctor_email"],
+                            "Date:", appointment["date"],
+                            "Time:", appointment["time"]
+                        )
+                        available_ids.append(appointment["appointment_id"])
 
                     if len(available_ids) > 0:
-                        selected_id = st.selectbox("Select Appointment ID to Book", available_ids, key="appointment_select")
+                        selected_id = st.selectbox(
+                            "Select Appointment ID to Book",
+                            available_ids,
+                            key="appointment_select"
+                        )
 
                         if st.button("Book Appointment", key="book_appointment_btn"):
-                            for appointment in appointments:
-                                if appointment["appointment_id"] == selected_id:
-                                    appointment["patient_email"] = user["email"]
-                                    appointment["status"] = "booked"
-                                    break
+                            result = appointment_service.book_appointment(
+                                selected_id,
+                                user["email"]
+                            )
 
-                            with open(appointments_path, "w") as f:
-                                json.dump(appointments, f, indent=4)
-
-                            st.success("Appointment booked successfully")
-                            st.rerun()
-                    
-                    else: 
+                            if result["success"]:
+                                store.save_appointments(appointments)
+                                st.success(result["message"])
+                                st.rerun()
+                            else:
+                                st.error(result["message"])
+                    else:
                         st.write("No available appointments")
-            
 
             with col2:
                 with st.container(border=True):
                     st.subheader("My Booked Appointments")
 
-                    found_booked = False
+                    patient_appointments = appointment_service.get_patient_appointments(
+                        user["email"]
+                    )
 
-                    for appointment in appointments:
-                        if appointment["patient_email"] == user["email"]:
-                            found_booked = True
-                            st.write(
-                                "Doctor:", appointment["doctor_email"],
-                                "Date:", appointment["date"],
-                                "Time:", appointment["time"],
-                                "Status:", appointment["status"]
-                            )
-
-                            if st.button(f"Cancel {appointment['appointment_id']}", key=f"cancel_{appointment['appointment_id']}"):
-                                appointment["patient_email"] = ""
-                                appointment["status"] = "available"
-
-                                with open(appointments_path, "w") as f:
-                                    json.dump(appointments, f, indent=4)
-
-                                st.success("Appointment cancelled successfully")
-                                st.rerun()
-                    if not found_booked:
+                    if len(patient_appointments) == 0:
                         st.write("No booked appointments")
 
-                    
+                    for appointment in patient_appointments:
+                        st.write(
+                            "Doctor:", appointment["doctor_email"],
+                            "Date:", appointment["date"],
+                            "Time:", appointment["time"],
+                            "Status:", appointment["status"]
+                        )
 
+                        if st.button(
+                            f"Cancel {appointment['appointment_id']}",
+                            key=f"cancel_{appointment['appointment_id']}"
+                        ):
+                            result = appointment_service.cancel_appointment(
+                                appointment["appointment_id"],
+                                user["email"]
+                            )
 
+                            if result["success"]:
+                                store.save_appointments(appointments)
+                                st.success(result["message"])
+                                st.rerun()
+                            else:
+                                st.error(result["message"])
+
+        # Doctor dashboard
         elif user["role"] == "Doctor":
             col1, col2 = st.columns(2)
 
             with col1:
                 with st.container(border=True):
                     st.subheader("Create Appointment Slot")
-                    appointment_date = st.date_input("Appointment Date", key="appointment_date")
-                    appointment_time = st.time_input("Appointment Time", key="appointment_time")
+
+                    appointment_date = st.date_input(
+                        "Appointment Date",
+                        key="appointment_date"
+                    )
+                    appointment_time = st.time_input(
+                        "Appointment Time",
+                        key="appointment_time"
+                    )
+
                     if st.button("Add Appointment Slot", key="add_appointment_slot_btn"):
-                        new_appointment = {
-                            "appointment_id": str(len(appointments) + 1),
-                            "doctor_email": user["email"],
-                            "patient_email": "",
-                            "date": str(appointment_date),
-                            "time": str(appointment_time),
-                            "status": "available"
-                        }
-                        appointments.append(new_appointment)
+                        result = appointment_service.create_appointment_slot(
+                            user["email"],
+                            appointment_date,
+                            appointment_time
+                        )
 
-                        with open(appointments_path, "w") as f:
-                            json.dump(appointments, f, indent=4)
-
-                        st.success("Appointment slot added successfully")
-                        st.rerun()
+                        if result["success"]:
+                            store.save_appointments(appointments)
+                            st.success(result["message"])
+                            st.rerun()
+                        else:
+                            st.error(result["message"])
 
                 st.divider()
 
                 with st.container(border=True):
                     st.subheader("Booked Appointments")
 
-                    found_doctor_booked = False
+                    booked_appointments = appointment_service.get_doctor_booked_appointments(
+                        user["email"]
+                    )
 
-                    for appointment in appointments:
-                        if appointment["doctor_email"] == user["email"] and appointment["status"] == "booked":
-                            found_doctor_booked = True
-                            st.write(
-                                "Patient:", appointment["patient_email"],
-                                    "Date:", appointment["date"],
-                                    "Time:", appointment["time"]
-                                )
-                    if not found_doctor_booked:
+                    if len(booked_appointments) == 0:
                         st.write("No booked appointments")
+
+                    for appointment in booked_appointments:
+                        st.write(
+                            "Patient:", appointment["patient_email"],
+                            "Date:", appointment["date"],
+                            "Time:", appointment["time"]
+                        )
 
             with col2:
                 with st.container(border=True):
                     st.subheader("Your Appointment Slots")
-                    for appointment in appointments:
-                        if appointment["doctor_email"] == user["email"]:
-                            st.write(
-                                "Date:", appointment["date"],
-                                "Time:", appointment["time"],
-                                "Status:", appointment["status"]
+
+                    doctor_appointments = appointment_service.get_doctor_appointments(
+                        user["email"]
+                    )
+
+                    if len(doctor_appointments) == 0:
+                        st.write("No appointment slots yet")
+
+                    for appointment in doctor_appointments:
+                        st.write(
+                            "Date:", appointment["date"],
+                            "Time:", appointment["time"],
+                            "Status:", appointment["status"]
+                        )
+
+                        if st.button(
+                            f"Delete {appointment['appointment_id']}",
+                            key=f"delete_{appointment['appointment_id']}"
+                        ):
+                            result = appointment_service.delete_appointment_slot(
+                                appointment["appointment_id"],
+                                user["email"]
                             )
 
-                            if st.button(f"Delete {appointment['appointment_id']}", key=f"delete_{appointment['appointment_id']}"):
-                                appointments.remove(appointment)
-
-                                with open(appointments_path, "w") as f:
-                                    json.dump(appointments, f, indent=4)
-
-                                st.success("Appointment slot deleted successfully")
+                            if result["success"]:
+                                store.save_appointments(appointments)
+                                st.success(result["message"])
                                 st.rerun()
-                    
-
-
-
-                    
+                            else:
+                                st.error(result["message"])
