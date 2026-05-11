@@ -4,6 +4,7 @@ from datetime import datetime
 
 from data_store import DataStore
 from services import AuthService, AppointmentService
+from ai_assistant import ClinicAIAssistant
 
 
 st.set_page_config(page_title="ClinicConnect", layout="wide")
@@ -59,6 +60,36 @@ def show_appointment_card(appointment, show_patient=False, show_doctor=False):
         st.write("Status:", appointment["status"].title())
 
 
+def show_ai_assistant(user):
+    st.divider()
+
+    with st.container(border=True):
+        st.subheader("ClinicConnect AI Assistant")
+
+        if user["role"] == "Patient":
+            st.write("Ask about preparing for appointments, what to bring, or how to use the app.")
+            default_question = "What should I bring to my appointment?"
+        else:
+            st.write("Ask for help summarizing notes or thinking of follow-up questions.")
+            default_question = "Suggest follow-up questions for a patient appointment."
+
+        question = st.text_area(
+            "Ask the assistant a question",
+            value=default_question,
+            key=f"ai_question_{user['role']}"
+        )
+
+        if st.button("Ask AI Assistant", key=f"ask_ai_{user['role']}"):
+            with st.spinner("Thinking..."):
+                result = ai_assistant.get_response(user["role"], question)
+
+            if result["success"]:
+                st.success("AI response generated.")
+                st.write(result["message"])
+            else:
+                st.warning(result["message"])
+
+
 # Data/service setup
 store = DataStore()
 users = store.load_users()
@@ -66,6 +97,7 @@ appointments = store.load_appointments()
 
 auth_service = AuthService(users)
 appointment_service = AppointmentService(appointments)
+ai_assistant = ClinicAIAssistant()
 
 
 # Session state setup
@@ -370,3 +402,5 @@ if st.session_state["user"] is not None:
                             st.info("Booked appointments can be completed from the Booked Appointments section.")
                         elif appointment["status"] == "completed":
                             st.info("Completed appointments are locked and kept as history.")
+
+        show_ai_assistant(user)
