@@ -45,19 +45,26 @@ def show_message(result):
         st.error(result["message"])
 
 
-def show_appointment_card(appointment, show_patient=False, show_doctor=False):
-    with st.container(border=True):
-        st.write("Appointment ID:", appointment["appointment_id"])
+def get_appointment_label(appointment):
+    return (
+        f"Appointment {appointment['appointment_id']} — "
+        f"{appointment['date']} at {format_time(appointment['time'])} "
+        f"({appointment['status'].title()})"
+    )
 
-        if show_doctor:
-            st.write("Doctor:", appointment["doctor_email"])
 
-        if show_patient:
-            st.write("Patient:", appointment["patient_email"])
+def show_appointment_details(appointment, show_patient=False, show_doctor=False):
+    st.write("Appointment ID:", appointment["appointment_id"])
 
-        st.write("Date:", appointment["date"])
-        st.write("Time:", format_time(appointment["time"]))
-        st.write("Status:", appointment["status"].title())
+    if show_doctor:
+        st.write("Doctor:", appointment["doctor_email"])
+
+    if show_patient:
+        st.write("Patient:", appointment["patient_email"])
+
+    st.write("Date:", appointment["date"])
+    st.write("Time:", format_time(appointment["time"]))
+    st.write("Status:", appointment["status"].title())
 
 
 # Data/service setup
@@ -155,8 +162,6 @@ def build_ai_context(user):
 
 
 def show_ai_assistant(user):
-    st.divider()
-
     with st.container(border=True):
         st.subheader("ClinicConnect AI Assistant")
 
@@ -290,57 +295,67 @@ if st.session_state["user"] is not None:
 
         # Patient dashboard
         if user["role"] == "Patient":
-            col1, col2 = st.columns(2)
+            available_tab, active_tab, completed_tab, assistant_tab = st.tabs(
+                [
+                    "Available Appointments",
+                    "My Active Appointments",
+                    "Completed History",
+                    "AI Assistant",
+                ]
+            )
 
-            with col1:
-                with st.container(border=True):
-                    st.subheader("Available Appointments")
+            with available_tab:
+                st.subheader("Available Appointments")
+                st.write("Choose an available appointment slot to book.")
 
-                    available_appointments = appointment_service.get_available_appointments()
-                    available_ids = []
+                available_appointments = appointment_service.get_available_appointments()
+                available_ids = []
 
-                    if len(available_appointments) == 0:
-                        st.write("No available appointments")
+                if len(available_appointments) == 0:
+                    st.info("No available appointments right now.")
 
-                    for appointment in available_appointments:
-                        show_appointment_card(appointment, show_doctor=True)
-                        available_ids.append(appointment["appointment_id"])
+                for appointment in available_appointments:
+                    available_ids.append(appointment["appointment_id"])
 
-                    if len(available_ids) > 0:
-                        selected_id = st.selectbox(
-                            "Select Appointment ID to Book",
-                            available_ids,
-                            key="appointment_select"
-                        )
+                    with st.expander(get_appointment_label(appointment)):
+                        show_appointment_details(appointment, show_doctor=True)
 
-                        if st.button("Book Appointment", key="book_appointment_btn"):
-                            result = appointment_service.book_appointment(
-                                selected_id,
-                                user["email"]
-                            )
-
-                            show_message(result)
-
-                            if result["success"]:
-                                store.save_appointments(appointments)
-                                st.rerun()
-
-            with col2:
-                with st.container(border=True):
-                    st.subheader("My Active Appointments")
-
-                    active_appointments = appointment_service.get_patient_active_appointments(
-                        user["email"]
+                if len(available_ids) > 0:
+                    selected_id = st.selectbox(
+                        "Select Appointment ID to Book",
+                        available_ids,
+                        key="appointment_select"
                     )
 
-                    if len(active_appointments) == 0:
-                        st.write("No active appointments")
+                    if st.button("Book Appointment", key="book_appointment_btn"):
+                        result = appointment_service.book_appointment(
+                            selected_id,
+                            user["email"]
+                        )
 
-                    for appointment in active_appointments:
-                        show_appointment_card(appointment, show_doctor=True)
+                        show_message(result)
+
+                        if result["success"]:
+                            store.save_appointments(appointments)
+                            st.rerun()
+
+            with active_tab:
+                st.subheader("My Active Appointments")
+                st.write("These are appointments you have booked but have not completed yet.")
+
+                active_appointments = appointment_service.get_patient_active_appointments(
+                    user["email"]
+                )
+
+                if len(active_appointments) == 0:
+                    st.info("No active appointments.")
+
+                for appointment in active_appointments:
+                    with st.expander(get_appointment_label(appointment)):
+                        show_appointment_details(appointment, show_doctor=True)
 
                         if st.button(
-                            f"Cancel {appointment['appointment_id']}",
+                            f"Cancel Appointment {appointment['appointment_id']}",
                             key=f"cancel_{appointment['appointment_id']}"
                         ):
                             result = appointment_service.cancel_appointment(
@@ -354,29 +369,42 @@ if st.session_state["user"] is not None:
                                 store.save_appointments(appointments)
                                 st.rerun()
 
-                st.divider()
+            with completed_tab:
+                st.subheader("Completed Appointment History")
+                st.write("Completed appointments are locked and kept as history.")
 
-                with st.container(border=True):
-                    st.subheader("Completed Appointment History")
+                completed_appointments = appointment_service.get_patient_completed_appointments(
+                    user["email"]
+                )
 
-                    completed_appointments = appointment_service.get_patient_completed_appointments(
-                        user["email"]
-                    )
+                if len(completed_appointments) == 0:
+                    st.info("No completed appointments yet.")
 
-                    if len(completed_appointments) == 0:
-                        st.write("No completed appointments yet")
+                for appointment in completed_appointments:
+                    with st.expander(get_appointment_label(appointment)):
+                        show_appointment_details(appointment, show_doctor=True)
+                        st.info("This appointment is completed and cannot be changed.")
 
-                    for appointment in completed_appointments:
-                        show_appointment_card(appointment, show_doctor=True)
+            with assistant_tab:
+                show_ai_assistant(user)
 
         # Doctor dashboard
         elif user["role"] == "Doctor":
-            col1, col2 = st.columns(2)
+            create_tab, booked_tab, slots_tab, completed_tab, assistant_tab = st.tabs(
+                [
+                    "Create Slot",
+                    "Booked Appointments",
+                    "All Slots",
+                    "Completed History",
+                    "AI Assistant",
+                ]
+            )
 
-            with col1:
+            with create_tab:
+                st.subheader("Create Appointment Slot")
+                st.write("Create a new appointment slot for patients to book.")
+
                 with st.container(border=True):
-                    st.subheader("Create Appointment Slot")
-
                     appointment_date = st.date_input(
                         "Appointment Date",
                         key="appointment_date"
@@ -414,20 +442,20 @@ if st.session_state["user"] is not None:
                             store.save_appointments(appointments)
                             st.rerun()
 
-                st.divider()
+            with booked_tab:
+                st.subheader("Booked Appointments")
+                st.write("These appointments have been booked by patients and can be marked completed.")
 
-                with st.container(border=True):
-                    st.subheader("Booked Appointments")
+                booked_appointments = appointment_service.get_doctor_booked_appointments(
+                    user["email"]
+                )
 
-                    booked_appointments = appointment_service.get_doctor_booked_appointments(
-                        user["email"]
-                    )
+                if len(booked_appointments) == 0:
+                    st.info("No booked appointments.")
 
-                    if len(booked_appointments) == 0:
-                        st.write("No booked appointments")
-
-                    for appointment in booked_appointments:
-                        show_appointment_card(appointment, show_patient=True)
+                for appointment in booked_appointments:
+                    with st.expander(get_appointment_label(appointment)):
+                        show_appointment_details(appointment, show_patient=True)
 
                         if st.button(
                             f"Mark Completed {appointment['appointment_id']}",
@@ -444,38 +472,24 @@ if st.session_state["user"] is not None:
                                 store.save_appointments(appointments)
                                 st.rerun()
 
-                st.divider()
+            with slots_tab:
+                st.subheader("All Appointment Slots")
+                st.write("Review all of your available, booked, and completed appointment slots.")
 
-                with st.container(border=True):
-                    st.subheader("Completed Appointment History")
+                doctor_appointments = appointment_service.get_doctor_appointments(
+                    user["email"]
+                )
 
-                    completed_appointments = appointment_service.get_doctor_completed_appointments(
-                        user["email"]
-                    )
+                if len(doctor_appointments) == 0:
+                    st.info("No appointment slots yet.")
 
-                    if len(completed_appointments) == 0:
-                        st.write("No completed appointments yet")
-
-                    for appointment in completed_appointments:
-                        show_appointment_card(appointment, show_patient=True)
-
-            with col2:
-                with st.container(border=True):
-                    st.subheader("Your Appointment Slots")
-
-                    doctor_appointments = appointment_service.get_doctor_appointments(
-                        user["email"]
-                    )
-
-                    if len(doctor_appointments) == 0:
-                        st.write("No appointment slots yet")
-
-                    for appointment in doctor_appointments:
-                        show_appointment_card(appointment)
+                for appointment in doctor_appointments:
+                    with st.expander(get_appointment_label(appointment)):
+                        show_appointment_details(appointment)
 
                         if appointment["status"] == "available":
                             if st.button(
-                                f"Delete {appointment['appointment_id']}",
+                                f"Delete Appointment {appointment['appointment_id']}",
                                 key=f"delete_{appointment['appointment_id']}"
                             ):
                                 result = appointment_service.delete_appointment_slot(
@@ -489,8 +503,25 @@ if st.session_state["user"] is not None:
                                     store.save_appointments(appointments)
                                     st.rerun()
                         elif appointment["status"] == "booked":
-                            st.info("Booked appointments can be completed from the Booked Appointments section.")
+                            st.info("Booked appointments can be completed from the Booked Appointments tab.")
                         elif appointment["status"] == "completed":
                             st.info("Completed appointments are locked and kept as history.")
 
-        show_ai_assistant(user)
+            with completed_tab:
+                st.subheader("Completed Appointment History")
+                st.write("Completed appointments are stored as history and cannot be changed back.")
+
+                completed_appointments = appointment_service.get_doctor_completed_appointments(
+                    user["email"]
+                )
+
+                if len(completed_appointments) == 0:
+                    st.info("No completed appointments yet.")
+
+                for appointment in completed_appointments:
+                    with st.expander(get_appointment_label(appointment)):
+                        show_appointment_details(appointment, show_patient=True)
+                        st.info("This appointment is completed and locked.")
+
+            with assistant_tab:
+                show_ai_assistant(user)
