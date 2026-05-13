@@ -67,6 +67,17 @@ class AppointmentService:
     def __init__(self, appointments):
         self.appointments = appointments
 
+    def get_next_appointment_id(self):
+        highest_id = 0
+
+        for appointment in self.appointments:
+            current_id = int(appointment["appointment_id"])
+
+            if current_id > highest_id:
+                highest_id = current_id
+
+        return str(highest_id + 1)
+
     def get_available_appointments(self):
         available = []
 
@@ -200,7 +211,7 @@ class AppointmentService:
 
     def create_appointment_slot(self, doctor_email, appointment_date, appointment_time):
         new_appointment = {
-            "appointment_id": str(len(self.appointments) + 1),
+            "appointment_id": self.get_next_appointment_id(),
             "doctor_email": doctor_email,
             "patient_email": "",
             "date": str(appointment_date),

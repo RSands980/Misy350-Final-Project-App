@@ -21,15 +21,7 @@
         "patient_email": "patient@test.com",
         "date": "2026-04-05",
         "time": "15:30:00",
-        "status": "booked"
-    },
-    {
-        "appointment_id": "4",
-        "doctor_email": "doctor@test.com",
-        "patient_email": "",
-        "date": "2026-05-11",
-        "time": "14:30:00",
-        "status": "available"
+        "status": "completed"
     },
     {
         "appointment_id": "5",
@@ -46,5 +38,29 @@
         "date": "2026-05-12",
         "time": "17:00:00",
         "status": "completed"
+    },
+    {
+        "appointment_id": "7",
+        "doctor_email": "doctor@test.com",
+        "patient_email": "",
+        "date": "2026-05-12",
+        "time": "14:00:00",
+        "status": "available"
+    },
+    {
+        "appointment_id": "8",
+        "doctor_email": "doctor@test.com",
+        "patient_email": "patient@test.com",
+        "date": "2026-05-14",
+        "time": "14:30:00",
+        "status": "booked"
+    },
+    {
+        "appointment_id": "9",
+        "doctor_email": "doctor@test.com",
+        "patient_email": "",
+        "date": "2026-05-14",
+        "time": "17:00:00",
+        "status": "available"
     }
 ]

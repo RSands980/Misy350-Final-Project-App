@@ -350,13 +350,13 @@ if st.session_state["user"] is not None:
                 if len(active_appointments) == 0:
                     st.info("No active appointments.")
 
-                for appointment in active_appointments:
+                for index, appointment in enumerate(active_appointments):
                     with st.expander(get_appointment_label(appointment)):
                         show_appointment_details(appointment, show_doctor=True)
 
                         if st.button(
                             f"Cancel Appointment {appointment['appointment_id']}",
-                            key=f"cancel_{appointment['appointment_id']}"
+                            key=f"cancel_{appointment['appointment_id']}_{index}"
                         ):
                             result = appointment_service.cancel_appointment(
                                 appointment["appointment_id"],
@@ -453,13 +453,13 @@ if st.session_state["user"] is not None:
                 if len(booked_appointments) == 0:
                     st.info("No booked appointments.")
 
-                for appointment in booked_appointments:
+                for index, appointment in enumerate(booked_appointments):
                     with st.expander(get_appointment_label(appointment)):
                         show_appointment_details(appointment, show_patient=True)
 
                         if st.button(
                             f"Mark Completed {appointment['appointment_id']}",
-                            key=f"complete_{appointment['appointment_id']}"
+                            key=f"complete_{appointment['appointment_id']}_{index}"
                         ):
                             result = appointment_service.complete_appointment(
                                 appointment["appointment_id"],
@@ -483,14 +483,14 @@ if st.session_state["user"] is not None:
                 if len(doctor_appointments) == 0:
                     st.info("No appointment slots yet.")
 
-                for appointment in doctor_appointments:
+                for index, appointment in enumerate(doctor_appointments):
                     with st.expander(get_appointment_label(appointment)):
                         show_appointment_details(appointment)
 
                         if appointment["status"] == "available":
                             if st.button(
                                 f"Delete Appointment {appointment['appointment_id']}",
-                                key=f"delete_{appointment['appointment_id']}"
+                                key=f"delete_{appointment['appointment_id']}_{index}"
                             ):
                                 result = appointment_service.delete_appointment_slot(
                                     appointment["appointment_id"],
