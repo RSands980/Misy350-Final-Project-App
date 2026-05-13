@@ -11,44 +11,12 @@
         "appointment_id": "2",
         "doctor_email": "doctor@test.com",
         "patient_email": "patient@test.com",
-        "date": "2026-04-05",
-        "time": "19:39:00",
-        "status": "completed"
-    },
-    {
-        "appointment_id": "3",
-        "doctor_email": "doctor@test.com",
-        "patient_email": "patient@test.com",
-        "date": "2026-04-05",
-        "time": "15:30:00",
-        "status": "completed"
-    },
-    {
-        "appointment_id": "5",
-        "doctor_email": "doctor@test.com",
-        "patient_email": "patient@test.com",
         "date": "2026-05-11",
         "time": "17:00:00",
         "status": "completed"
     },
     {
-        "appointment_id": "6",
-        "doctor_email": "doctor@test.com",
-        "patient_email": "patient@test.com",
-        "date": "2026-05-12",
-        "time": "17:00:00",
-        "status": "completed"
-    },
-    {
-        "appointment_id": "7",
-        "doctor_email": "doctor@test.com",
-        "patient_email": "",
-        "date": "2026-05-12",
-        "time": "14:00:00",
-        "status": "available"
-    },
-    {
-        "appointment_id": "8",
+        "appointment_id": "3",
         "doctor_email": "doctor@test.com",
         "patient_email": "patient@test.com",
         "date": "2026-05-14",
@@ -56,11 +24,19 @@
         "status": "booked"
     },
     {
-        "appointment_id": "9",
+        "appointment_id": "4",
         "doctor_email": "doctor@test.com",
         "patient_email": "",
         "date": "2026-05-14",
         "time": "17:00:00",
+        "status": "available"
+    },
+    {
+        "appointment_id": "5",
+        "doctor_email": "doctor@test.com",
+        "patient_email": "",
+        "date": "2026-05-15",
+        "time": "11:00:00",
         "status": "available"
     }
 ]
